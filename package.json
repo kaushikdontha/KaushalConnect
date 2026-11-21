@@ -1,0 +1,21 @@
+{
+  "name": "kaushalconnect",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm --workspace @kaushalconnect/api run dev",
+    "dev:web": "npm --workspace @kaushalconnect/web run dev",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:generate": "npm --workspace @kaushalconnect/api run db:generate",
+    "db:migrate": "npm --workspace @kaushalconnect/api run db:migrate",
+    "db:deploy": "npm --workspace @kaushalconnect/api run db:deploy",
+    "db:seed:demo": "npm --workspace @kaushalconnect/api run db:seed:demo",
+    "worker": "npm --workspace @kaushalconnect/api run worker",
+    "infra:up": "docker compose up -d postgres redis",
+    "infra:down": "docker compose down"
+  },
+  "devDependencies": { "concurrently": "^9.2.1", "typescript": "^5.9.3" }
+}

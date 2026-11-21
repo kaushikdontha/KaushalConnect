@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  CANDIDATE
+  RECRUITER
+}
+
+enum ApplicationStatus {
+  APPLIED
+  SHORTLISTED
+  REJECTED
+}
+
+model User {
+  id            String         @id @default(uuid()) @db.Uuid
+  name          String
+  // The API stores this value in lowercase after trimming whitespace.
+  email         String         @unique
+  passwordHash  String
+  role          UserRole
+  skills        String[]       @default([])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  jobs          Job[]          @relation("RecruiterJobs")
+  applications  Application[]  @relation("CandidateApplications")
+  notifications Notification[]
+}
+
+model Job {
+  id             String        @id @default(uuid()) @db.Uuid
+  recruiterId    String        @db.Uuid
+  title          String
+  description    String
+  location       String
+  requiredSkills String[]      @default([])
+  deadline       DateTime
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  recruiter      User          @relation("RecruiterJobs", fields: [recruiterId], references: [id], onDelete: Cascade)
+  applications   Application[]
+
+  @@index([recruiterId, createdAt])
+  @@index([deadline])
+}
+
+model Application {
+  id          String            @id @default(uuid()) @db.Uuid
+  jobId       String            @db.Uuid
+  candidateId String            @db.Uuid
+  coverNote   String            @default("")
+  matchScore  Int
+  status      ApplicationStatus @default(APPLIED)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  job         Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidate   User              @relation("CandidateApplications", fields: [candidateId], references: [id], onDelete: Cascade)
+  notification Notification?
+
+  @@unique([jobId, candidateId])
+  @@index([candidateId, createdAt])
+  @@index([jobId, status])
+}
+
+model Notification {
+  id            String      @id @default(uuid()) @db.Uuid
+  userId        String      @db.Uuid
+  applicationId String      @unique @db.Uuid
+  message       String
+  createdAt     DateTime    @default(now())
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
