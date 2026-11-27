@@ -33,7 +33,11 @@ Run `npm run db:seed:demo` after applying migrations to save 100 fictional jobs.
 
 Before publishing source to GitHub, run `npm run db:generate`, `npm run build`, and `npm run typecheck`. Keep `.env` private; `.env.example` documents the required settings. Database records are not included in GitHub: migrate and seed the target database separately.
 
-GitHub hosts the source repository. The full application also needs a Node API host and PostgreSQL; GitHub Pages cannot run the API. For Vercel frontend hosting, set the project root to `apps/web`, build with `npm run build`, and use `dist` as output. Set `VITE_API_URL` to the deployed API URL ending in `/api` before building. Configure `WEB_ORIGIN` on the API to the frontend HTTPS origin, `NODE_ENV=production`, database connection strings, and a unique random `JWT_SECRET`. Run `npm run db:deploy` against the target database before starting the API. Start the compiled API with `npm --workspace @kaushalconnect/api start`.
+For Vercel, use the repository root as Root Directory. The root `vercel.json` builds both workspaces, generates Prisma Client, serves `apps/web/dist`, and routes `/api/*` to the Express function. Root runtime dependencies are declared explicitly so Vercel packages the backend dependencies. Keep their versions aligned with `apps/api/package.json`.
+
+Set production environment variables: `VITE_API_URL=/api`, `WEB_ORIGIN` to the frontend HTTPS origin, `DATABASE_URL` to hosted PostgreSQL, `DIRECT_URL` to its direct connection for migrations, and a unique random `JWT_SECRET` of at least 32 characters. Run `npm run db:deploy` against that database before using registration. Localhost database URLs cannot work from Vercel. The queue worker needs a separate long-running host and Redis when notification delivery is enabled.
+
+For a separate API host, set `VITE_API_URL` to that host's URL ending in `/api` and start the compiled API with `npm --workspace @kaushalconnect/api start`. GitHub Pages cannot run the API.
 
 The queue worker currently only logs notifications; notification delivery is not implemented. Before exposing authentication publicly, add request rate limiting and account recovery appropriate to your hosting environment.
 
