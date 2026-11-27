@@ -27,8 +27,8 @@ model User {
   passwordHash  String
   role          UserRole
   skills        String[]       @default([])
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  createdAt     DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime       @updatedAt @db.Timestamptz(3)
   jobs          Job[]          @relation("RecruiterJobs")
   applications  Application[]  @relation("CandidateApplications")
   notifications Notification[]
@@ -41,10 +41,10 @@ model Job {
   description    String
   location       String
   requiredSkills String[]      @default([])
-  deadline       DateTime
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  recruiter      User          @relation("RecruiterJobs", fields: [recruiterId], references: [id], onDelete: Cascade)
+  deadline       DateTime @db.Timestamptz(3)
+  createdAt      DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime      @updatedAt @db.Timestamptz(3)
+  recruiter      User          @relation("RecruiterJobs", fields: [recruiterId], references: [id], onDelete: Restrict)
   applications   Application[]
 
   @@index([recruiterId, createdAt])
@@ -58,11 +58,11 @@ model Application {
   coverNote   String            @default("")
   matchScore  Int
   status      ApplicationStatus @default(APPLIED)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  job         Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  candidate   User              @relation("CandidateApplications", fields: [candidateId], references: [id], onDelete: Cascade)
-  notification Notification?
+  createdAt   DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime          @updatedAt @db.Timestamptz(3)
+  job         Job               @relation(fields: [jobId], references: [id], onDelete: Restrict)
+  candidate   User              @relation("CandidateApplications", fields: [candidateId], references: [id], onDelete: Restrict)
+  notifications Notification[]
 
   @@unique([jobId, candidateId])
   @@index([candidateId, createdAt])
@@ -72,11 +72,12 @@ model Application {
 model Notification {
   id            String      @id @default(uuid()) @db.Uuid
   userId        String      @db.Uuid
-  applicationId String      @unique @db.Uuid
+  applicationId String      @db.Uuid
+  eventKey      String      @unique
   message       String
-  createdAt     DateTime    @default(now())
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now()) @db.Timestamptz(3)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Restrict)
 
   @@index([userId, createdAt])
 }

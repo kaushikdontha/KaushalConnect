@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { prisma } from '../config/database.js';
 import { AuthRequest, requireAuth, requireRole } from '../middleware/auth.js';
 import { matchSkills } from '../utils/skillMatch.js';
+import { enqueueDecision } from '../services/queue.js';
+import { logger } from '../config/logger.js';
 
 const router = Router();
 const applicationSchema = z.object({ coverNote: z.string().trim().max(2000).optional().default('') });
@@ -45,4 +47,24 @@ router.get('/jobs/:id/applications', requireAuth, requireRole('RECRUITER'), asyn
   } catch (error) { return next(error); }
 });
 
+router.patch('/applications/:id/status', requireAuth, requireRole('RECRUITER'), async (req: AuthRequest, res, next) => {
+  const id = String(req.params.id);
+  const parsed = z.object({ status: z.enum(['SHORTLISTED', 'REJECTED']) }).safeParse(req.body);
+  if (!idSchema.safeParse(id).success || !parsed.success) return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Provide a valid application ID and decision.' } });
+  try {
+    const application = await prisma.application.findUnique({ where: { id }, include: { job: { select: { recruiterId: true } } } });
+    if (!application) return res.status(404).json({ error: { code: 'APPLICATION_NOT_FOUND', message: 'Application not found.' } });
+    if (application.job.recruiterId !== req.user!.id) return res.status(403).json({ error: { code: 'FORBIDDEN', message: 'You can only decide on your own applicants.' } });
+    const result = await prisma.application.updateMany({ where: { id, status: 'APPLIED' }, data: { status: parsed.data.status } });
+    if (!result.count) return res.status(400).json({ error: { code: 'INVALID_TRANSITION', message: 'This application already has a final decision.' } });
+    let notificationStatus: 'QUEUED' | 'FAILED' = 'QUEUED';
+    try { await enqueueDecision({ applicationId: id, status: parsed.data.status }); }
+    catch { notificationStatus = 'FAILED'; logger.error({ applicationId: id }, 'Decision saved; notification enqueue failed'); }
+    return res.json({ id, status: parsed.data.status, notificationStatus });
+  } catch (error) { return next(error); }
+});
+router.get('/notifications/me', requireAuth, async (req: AuthRequest, res, next) => {
+  try { return res.json(await prisma.notification.findMany({ where: { userId: req.user!.id }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 100 })); }
+  catch (error) { return next(error); }
+});
 export const applicationsRouter = router;

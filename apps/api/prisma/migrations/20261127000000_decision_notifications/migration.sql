@@ -1,0 +1,22 @@
+ALTER TABLE "Notification" ADD COLUMN "eventKey" TEXT;
+UPDATE "Notification" SET "eventKey" = 'legacy-' || "id"::text;
+ALTER TABLE "Notification" ALTER COLUMN "eventKey" SET NOT NULL;
+DROP INDEX "Notification_applicationId_key";
+CREATE UNIQUE INDEX "Notification_eventKey_key" ON "Notification"("eventKey");
+ALTER TABLE "Job" DROP CONSTRAINT "Job_recruiterId_fkey";
+ALTER TABLE "Job" ADD CONSTRAINT "Job_recruiterId_fkey" FOREIGN KEY ("recruiterId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Application" DROP CONSTRAINT "Application_jobId_fkey", DROP CONSTRAINT "Application_candidateId_fkey";
+ALTER TABLE "Application" ADD CONSTRAINT "Application_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "Job"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Application" ADD CONSTRAINT "Application_candidateId_fkey" FOREIGN KEY ("candidateId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Notification" DROP CONSTRAINT "Notification_userId_fkey", DROP CONSTRAINT "Notification_applicationId_fkey";
+ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Notification" ADD CONSTRAINT "Notification_applicationId_fkey" FOREIGN KEY ("applicationId") REFERENCES "Application"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER TABLE "User" ALTER COLUMN "createdAt" TYPE TIMESTAMPTZ(3) USING "createdAt" AT TIME ZONE 'UTC';
+ALTER TABLE "User" ALTER COLUMN "updatedAt" TYPE TIMESTAMPTZ(3) USING "updatedAt" AT TIME ZONE 'UTC';
+ALTER TABLE "Job" ALTER COLUMN "deadline" TYPE TIMESTAMPTZ(3) USING "deadline" AT TIME ZONE 'UTC';
+ALTER TABLE "Job" ALTER COLUMN "createdAt" TYPE TIMESTAMPTZ(3) USING "createdAt" AT TIME ZONE 'UTC';
+ALTER TABLE "Job" ALTER COLUMN "updatedAt" TYPE TIMESTAMPTZ(3) USING "updatedAt" AT TIME ZONE 'UTC';
+ALTER TABLE "Application" ALTER COLUMN "createdAt" TYPE TIMESTAMPTZ(3) USING "createdAt" AT TIME ZONE 'UTC';
+ALTER TABLE "Application" ALTER COLUMN "updatedAt" TYPE TIMESTAMPTZ(3) USING "updatedAt" AT TIME ZONE 'UTC';
+ALTER TABLE "Notification" ALTER COLUMN "createdAt" TYPE TIMESTAMPTZ(3) USING "createdAt" AT TIME ZONE 'UTC';

@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
+import { z } from 'zod';
 
 export type AuthUser = { id: string; role: 'CANDIDATE' | 'RECRUITER' };
 export type AuthRequest = Request & { user?: AuthUser };
@@ -9,8 +10,9 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
   const authorization = req.header('authorization');
   if (!authorization?.startsWith('Bearer ')) return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'A valid bearer token is required.' } });
   try {
-    const payload = jwt.verify(authorization.slice(7), env.JWT_SECRET);
+    const payload = jwt.verify(authorization.slice(7), env.JWT_SECRET, { algorithms: ['HS256'] });
     if (typeof payload === 'string' || typeof payload.sub !== 'string' || (payload.role !== 'CANDIDATE' && payload.role !== 'RECRUITER')) throw new Error('Invalid token payload');
+    if (!z.string().uuid().safeParse(payload.sub).success) throw new Error('Invalid subject');
     req.user = { id: payload.sub, role: payload.role };
     return next();
   } catch {

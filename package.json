@@ -18,7 +18,9 @@
     "db:seed:demo": "npm --workspace @kaushalconnect/api run db:seed:demo",
     "worker": "npm --workspace @kaushalconnect/api run worker",
     "infra:up": "docker compose up -d postgres redis",
-    "infra:down": "docker compose down"
+    "infra:down": "docker compose down",
+    "test": "npm --workspace @kaushalconnect/api test",
+    "db:seed:fixtures": "npm --workspace @kaushalconnect/api run db:seed:fixtures"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

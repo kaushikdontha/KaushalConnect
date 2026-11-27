@@ -12,7 +12,10 @@
     "db:generate": "node scripts/prisma.cjs generate",
     "db:migrate": "node scripts/prisma.cjs migrate dev --name init --skip-generate",
     "db:deploy": "node scripts/prisma.cjs migrate deploy",
-    "db:seed:demo": "node --experimental-strip-types prisma/seed-demo.ts"
+    "db:seed:demo": "node --experimental-strip-types prisma/seed-demo.ts",
+    "test": "node scripts/test.cjs",
+    "worker:prod": "node dist/worker.js",
+    "db:seed:fixtures": "tsx prisma/seed-fixtures.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",

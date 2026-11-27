@@ -5,6 +5,11 @@ const dotenv = require('dotenv');
 const apiDir = path.resolve(__dirname, '..');
 const repoRoot = path.resolve(apiDir, '../..');
 dotenv.config({ path: path.join(repoRoot, '.env') });
+// Docker PostgreSQL uses one connection for application queries and migrations.
+if (!process.env.DIRECT_URL && process.env.DATABASE_URL) {
+  const hostname = new URL(process.env.DATABASE_URL).hostname;
+  if (['localhost', '127.0.0.1', '[::1]'].includes(hostname)) process.env.DIRECT_URL = process.env.DATABASE_URL;
+}
 
 const prismaCli = require.resolve('prisma/build/index.js', { paths: [apiDir] });
 const child = spawn(process.execPath, [prismaCli, ...process.argv.slice(2)], {
