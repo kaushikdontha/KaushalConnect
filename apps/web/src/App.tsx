@@ -4,7 +4,10 @@ import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 type User = { id: string; name: string; email: string; role: 'CANDIDATE' | 'RECRUITER'; skills: string[] };
 type Job = { id: string; title: string; description: string; location: string; requiredSkills: string[]; deadline: string };
 type Application = { id: string; status: string; matchScore: number; coverNote: string; createdAt: string; job?: Pick<Job, 'id' | 'title' | 'location' | 'deadline'>; candidate?: User };
-const API = (import.meta.env.VITE_API_URL?.trim() || (import.meta.env.DEV ? 'http://localhost:4000/api' : '')).replace(/\/+$/, '');
+const configuredApi = import.meta.env.VITE_API_URL?.trim() || (import.meta.env.DEV ? 'http://localhost:4000/api' : '/api');
+// Treat the documentation placeholder as unset so deployments use the same-origin
+// Vercel /api function instead of trying to contact your-api.example.com.
+const API = /your-api\.example\.com/i.test(configuredApi) ? '/api' : configuredApi.replace(/\/+$/, '');
 
 const demoRoles: [string, string, string[]][] = [
   ['Frontend Developer', 'BrightPath Digital', ['React', 'TypeScript', 'CSS']], ['Customer Support Associate', 'CareLoop', ['Communication', 'Problem solving', 'CRM']], ['Data Analyst', 'Northstar Insights', ['SQL', 'Excel', 'Power BI']], ['Graphic Designer', 'Paperplane Studio', ['Figma', 'Illustrator', 'Branding']], ['Digital Marketing Executive', 'MarketMint', ['SEO', 'Social media', 'Analytics']], ['Sales Development Representative', 'Fieldstone', ['Communication', 'CRM', 'Negotiation']], ['Junior Accountant', 'LedgerLeaf', ['Excel', 'Bookkeeping', 'Tally']], ['QA Tester', 'PixelForge', ['Manual testing', 'Jira', 'Attention to detail']], ['Operations Coordinator', 'Daybridge', ['Coordination', 'Excel', 'Communication']], ['UI/UX Designer', 'Goodform Labs', ['Figma', 'Prototyping', 'User research']],
@@ -19,7 +22,6 @@ const demoJobs: Job[] = Array.from({ length: 100 }, (_, index) => {
 });
 
 async function request<T>(path: string, token?: string, init: RequestInit = {}): Promise<T> {
-  if (!API) throw new Error('The API is not configured for this deployment.');
   const response = await fetch(`${API}${path}`, { ...init, headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...init.headers } });
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(body.error?.message ?? 'Request failed. Please try again.');
